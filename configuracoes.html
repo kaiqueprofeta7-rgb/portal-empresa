@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal Empresa - Configurações</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+
+    <script>
+        (function() {
+            if (localStorage.getItem('theme') === 'dark') document.documentElement.classList.add('dark');
+        })();
+    </script>
+
+    <style>
+        .config-grid { display: grid; grid-template-columns: 1fr; gap: 25px; max-width: 1000px; margin: 0 auto; }
+        .config-card { background: var(--bg-card); padding: 30px; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .config-header { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid var(--border); }
+        .table-container { width: 100%; overflow-x: auto; margin-top: 15px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--border); color: var(--text-color); font-size: 13px; }
+        th { font-size: 12px; text-transform: uppercase; color: var(--primary-color); letter-spacing: 1px; }
+        .badge { padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; color: white; }
+        .badge-sim { background: #10b981; }
+        .badge-nao { background: #ef4444; }
+        .btn-action { background: transparent; border: 1px solid var(--primary-color); color: var(--primary-color); padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.2s; }
+        .btn-action:hover { background: var(--primary-color); color: white; }
+        .btn-danger { border-color: #ef4444; color: #ef4444; }
+        .btn-danger:hover { background: #ef4444; color: white; }
+        .grade-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
+        .form-control { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--body-color); color: var(--text-color); outline: none; font-family: 'Poppins'; font-size: 13px; }
+        .form-control:focus { border-color: var(--primary-color); }
+        .btn-add { background: var(--primary-color); color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 600; transition: 0.2s; flex: 1; }
+        .btn-add:hover { opacity: 0.9; }
+        .btn-cancel { background: var(--body-color); color: var(--text-color); border: 1px solid var(--border); }
+        .btn-cancel:hover { background: var(--border); opacity: 1; }
+
+        /* CORRIGIDO: modal controlado por classe .active em vez de style inline */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-overlay.active { display: flex; }
+    </style>
+</head>
+<body class="body-site">
+
+<div id="sidebar-placeholder"></div>
+
+<section class="home-section">
+    <div class="content-area">
+        <div class="config-grid">
+
+            <!-- GRADE DE ATENDIMENTO -->
+            <div class="config-card">
+                <div class="config-header">
+                    <h2 style="color: var(--primary-color);">Configuração da Grade</h2>
+                    <p style="font-size: 13px; opacity: 0.7;">Registre os dias, horários e profissionais disponíveis.</p>
+                </div>
+                <div class="grade-form-grid">
+                    <select id="grade-dia" class="form-control">
+                        <option value="">Selecione o Dia...</option>
+                        <option value="1">Segunda-feira</option>
+                        <option value="2">Terça-feira</option>
+                        <option value="3">Quarta-feira</option>
+                        <option value="4">Quinta-feira</option>
+                        <option value="5">Sexta-feira</option>
+                        <option value="6">Sábado</option>
+                        <option value="0">Domingo</option>
+                    </select>
+                    <input type="text" id="grade-especialidade" class="form-control" placeholder="Especialidade">
+                    <input type="text" id="grade-profissional"  class="form-control" placeholder="Profissional">
+                    <input type="time" id="grade-horario"       class="form-control">
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button id="btn-salvar-grade"   class="btn-add">Adicionar à Grade</button>
+                    <button id="btn-cancelar-grade" class="btn-add btn-cancel" style="display: none;">Cancelar</button>
+                </div>
+                <div class="table-container">
+                    <table id="tabela-grade">
+                        <thead>
+                            <tr><th>Dia</th><th>Especialidade</th><th>Profissional</th><th>Horário</th><th>Ações</th></tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- GESTÃO DE USUÁRIOS -->
+            <div class="config-card">
+                <div class="config-header">
+                    <h2 style="color: var(--primary-color);">Gestão de Usuários</h2>
+                    <p style="font-size: 13px; opacity: 0.7;">Controle acessos e permissões.</p>
+                </div>
+                <div class="table-container">
+                    <table id="tabela-usuarios">
+                        <thead>
+                            <tr><th>Usuário</th><th>Pode Agendar</th><th>Pode Ver Agenda</th><th>Admin</th><th>Ações</th></tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+<!-- MODAL EDITAR PERMISSÕES -->
+<!-- CORRIGIDO: controlado por classe .active — sem style.display inline no JS -->
+<div id="modal-user" class="modal-overlay">
+    <div class="modal-content" style="background: var(--bg-card); color: var(--text-color); padding: 30px; border-radius: 12px; width: 350px; border: 1px solid var(--border);">
+        <h3 style="color: var(--primary-color);">Editar Permissões</h3>
+        <p id="user-edit-name" style="font-weight: 700; margin: 15px 0; text-transform: uppercase;"></p>
+        <div style="display: flex; flex-direction: column; gap: 15px; margin: 20px 0;">
+            <label><input type="checkbox" id="check-agendar"> &nbsp;Pode Agendar</label>
+            <label><input type="checkbox" id="check-agenda">  &nbsp;Pode Ver Agenda</label>
+            <label><input type="checkbox" id="check-config">  &nbsp;É Administrador</label>
+        </div>
+        <div style="display: flex; gap: 10px;">
+            <button id="btn-salvar-perm"  class="btn-add">Salvar</button>
+            <button id="btn-fechar-modal" class="btn-add btn-cancel">Sair</button>
+        </div>
+    </div>
+</div>
+
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="auth.js"></script>
+
+<script>
+    let usuarioEditandoId = null;
+    let gradeEditandoId   = null;
+
+    const nomesDias = { 0: "Domingo", 1: "Segunda-feira", 2: "Terça-feira", 3: "Quarta-feira", 4: "Quinta-feira", 5: "Sexta-feira", 6: "Sábado" };
+
+    // ── MODAL — controlado por classe ─────────────────────────────────────────
+    function abrirModal()  { document.getElementById('modal-user').classList.add('active'); }
+    function fecharModal() { document.getElementById('modal-user').classList.remove('active'); }
+
+    // ── GRADE ─────────────────────────────────────────────────────────────────
+    async function listarGrade() {
+        const { data } = await _supabase.from('grade_config').select('*').order('dia_semana');
+        const tbody = document.querySelector('#tabela-grade tbody');
+        if (!tbody) return;
+        tbody.innerHTML = '';
+        if (data) {
+            data.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><strong>${nomesDias[item.dia_semana]}</strong></td>
+                    <td>${item.especialidade}</td>
+                    <td>${item.profissional}</td>
+                    <td>${item.horario.substring(0, 5)}</td>
+                    <td>
+                        <button class="btn-action"
+                            data-grade-editar
+                            data-id="${item.id}"
+                            data-dia="${item.dia_semana}"
+                            data-esp="${item.especialidade}"
+                            data-prof="${item.profissional}"
+                            data-hora="${item.horario}">Editar</button>
+                        <button class="btn-action btn-danger"
+                            data-grade-excluir
+                            data-id="${item.id}">Excluir</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+    }
+
+    async function salvarGrade() {
+        const valorDia    = document.getElementById('grade-dia').value;
+        const dia_semana  = valorDia !== '' ? parseInt(valorDia) : null;
+        const especialidade = document.getElementById('grade-especialidade').value.trim();
+        const profissional  = document.getElementById('grade-profissional').value.trim();
+        let   horario       = document.getElementById('grade-horario').value;
+
+        if (dia_semana === null || !especialidade || !profissional || !horario) {
+            return alert("Preencha todos os campos da grade!");
+        }
+        if (horario.length === 5) horario += ':00';
+
+        const { error } = gradeEditandoId
+            ? await _supabase.from('grade_config').update({ dia_semana, especialidade, profissional, horario }).eq('id', gradeEditandoId)
+            : await _supabase.from('grade_config').insert([{ dia_semana, especialidade, profissional, horario }]);
+
+        if (!error) { cancelarEdicaoGrade(); listarGrade(); }
+        else alert("Erro ao salvar: " + error.message);
+    }
+
+    function prepararEdicaoGrade(id, dia, esp, prof, hora) {
+        gradeEditandoId = id;
+        document.getElementById('grade-dia').value           = dia;
+        document.getElementById('grade-especialidade').value = esp;
+        document.getElementById('grade-profissional').value  = prof;
+        document.getElementById('grade-horario').value       = hora.substring(0, 5);
+        document.getElementById('btn-salvar-grade').innerText  = "Atualizar";
+        document.getElementById('btn-cancelar-grade').style.display = 'block';
+    }
+
+    function cancelarEdicaoGrade() {
+        gradeEditandoId = null;
+        document.getElementById('grade-dia').value           = '';
+        document.getElementById('grade-especialidade').value = '';
+        document.getElementById('grade-profissional').value  = '';
+        document.getElementById('grade-horario').value       = '';
+        document.getElementById('btn-salvar-grade').innerText  = "Adicionar à Grade";
+        document.getElementById('btn-cancelar-grade').style.display = 'none';
+    }
+
+    async function excluirGrade(id) {
+        if (confirm("Excluir este registro da grade?")) {
+            await _supabase.from('grade_config').delete().eq('id', id);
+            listarGrade();
+        }
+    }
+
+    // ── USUÁRIOS ──────────────────────────────────────────────────────────────
+    async function listarUsuarios() {
+        const { data } = await _supabase.from('usuarios').select('*').order('login');
+        const tbody = document.querySelector('#tabela-usuarios tbody');
+        if (!tbody) return;
+        tbody.innerHTML = '';
+        if (data) {
+            data.forEach(u => {
+                const tr = document.createElement('tr');
+                const acoes = u.is_master
+                    ? '<span style="opacity:0.5; font-size:12px;">Dono</span>'
+                    : `<button class="btn-action"
+                            data-user-editar
+                            data-id="${u.id}"
+                            data-login="${u.login}"
+                            data-agen="${u.perm_agendar}"
+                            data-agend="${u.perm_agenda}"
+                            data-conf="${u.perm_config}">Editar</button>
+                       <button class="btn-action btn-danger"
+                            data-user-excluir
+                            data-id="${u.id}"
+                            data-login="${u.login}">Excluir</button>`;
+
+                tr.innerHTML = `
+                    <td>${u.login.toUpperCase()}</td>
+                    <td><span class="badge ${u.perm_agendar ? 'badge-sim' : 'badge-nao'}">${u.perm_agendar ? 'SIM' : 'NÃO'}</span></td>
+                    <td><span class="badge ${u.perm_agenda  ? 'badge-sim' : 'badge-nao'}">${u.perm_agenda  ? 'SIM' : 'NÃO'}</span></td>
+                    <td><span class="badge ${u.perm_config || u.is_master ? 'badge-sim' : 'badge-nao'}">${u.perm_config || u.is_master ? 'SIM' : 'NÃO'}</span></td>
+                    <td>${acoes}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+    }
+
+    function abrirEdicaoUsuario(id, login, agen, agend, conf) {
+        usuarioEditandoId = id;
+        document.getElementById('user-edit-name').innerText     = login;
+        document.getElementById('check-agendar').checked        = agen === 'true' || agen === true;
+        document.getElementById('check-agenda').checked         = agend === 'true' || agend === true;
+        document.getElementById('check-config').checked         = conf === 'true'  || conf === true;
+        abrirModal();
+    }
+
+    async function salvarPermissoes() {
+        const { error } = await _supabase.from('usuarios').update({
+            perm_agendar: document.getElementById('check-agendar').checked,
+            perm_agenda:  document.getElementById('check-agenda').checked,
+            perm_config:  document.getElementById('check-config').checked
+        }).eq('id', usuarioEditandoId);
+
+        if (!error) { fecharModal(); listarUsuarios(); }
+        else alert("Erro ao salvar permissões: " + error.message);
+    }
+
+    async function excluirUsuario(id, login) {
+        if (confirm(`Excluir o usuário "${login}"?`)) {
+            await _supabase.from('usuarios').delete().eq('id', id);
+            listarUsuarios();
+        }
+    }
+
+    // ── DELEGAÇÃO DE EVENTOS (tabelas geradas dinamicamente) ─────────────────
+    document.addEventListener('click', e => {
+        // Grade
+        const gradeEditar  = e.target.closest('[data-grade-editar]');
+        const gradeExcluir = e.target.closest('[data-grade-excluir]');
+        if (gradeEditar)  { prepararEdicaoGrade(gradeEditar.dataset.id, gradeEditar.dataset.dia, gradeEditar.dataset.esp, gradeEditar.dataset.prof, gradeEditar.dataset.hora); return; }
+        if (gradeExcluir) { excluirGrade(gradeExcluir.dataset.id); return; }
+
+        // Usuários
+        const userEditar  = e.target.closest('[data-user-editar]');
+        const userExcluir = e.target.closest('[data-user-excluir]');
+        if (userEditar)  { abrirEdicaoUsuario(userEditar.dataset.id, userEditar.dataset.login, userEditar.dataset.agen, userEditar.dataset.agend, userEditar.dataset.conf); return; }
+        if (userExcluir) { excluirUsuario(userExcluir.dataset.id, userExcluir.dataset.login); return; }
+
+        // Fecha modal clicando fora
+        if (e.target.id === 'modal-user') fecharModal();
+    });
+
+    // ── INICIALIZAÇÃO ─────────────────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', () => {
+        listarUsuarios();
+        listarGrade();
+
+        document.getElementById('btn-salvar-grade').addEventListener('click', salvarGrade);
+        document.getElementById('btn-cancelar-grade').addEventListener('click', cancelarEdicaoGrade);
+        document.getElementById('btn-salvar-perm').addEventListener('click', salvarPermissoes);
+        document.getElementById('btn-fechar-modal').addEventListener('click', fecharModal);
+    });
+</script>
+
+</body>
+</html>

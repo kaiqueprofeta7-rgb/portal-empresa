@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal Empresa - Fluxo Diário (Kanban)</title>
+
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+
+    <script>
+        (function() {
+            if (localStorage.getItem('theme') === 'dark') document.documentElement.classList.add('dark');
+        })();
+    </script>
+
+    <style>
+        .kanban-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+            align-items: start;
+        }
+
+        .kanban-column {
+            background: var(--primary-color-light);
+            border-radius: 12px;
+            padding: 15px;
+            min-height: 80vh;
+            border: 1px solid var(--border);
+            transition: var(--tran-05);
+        }
+
+        .column-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .column-header h3 {
+            font-size: 14px;
+            text-transform: uppercase;
+            color: var(--primary-color);
+            font-weight: 700;
+        }
+
+        .count-badge {
+            background: var(--primary-color);
+            color: white;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .kanban-card {
+            background: var(--bg-card);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 12px;
+            border-left: 5px solid var(--primary-color);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            transition: var(--tran-03);
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .kanban-card:hover { transform: translateY(-3px); box-shadow: 0 8px 12px rgba(0,0,0,0.1); }
+
+        .col-agendado    { border-left-color: #95a5a6; }
+        .col-espera      { border-left-color: #f1c40f; }
+        .col-atendimento { border-left-color: #2ecc71; }
+        .col-concluido   { border-left-color: #9b59b6; opacity: 0.8; }
+
+        .card-time { font-size: 11px; font-weight: 700; opacity: 0.6; margin-bottom: 5px; }
+        .card-name { font-size: 13px; font-weight: 700; color: var(--text-color); margin-bottom: 2px; text-transform: uppercase; }
+        .card-disc { font-size: 12px; color: var(--primary-color); font-weight: 600; }
+
+        .card-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 6px;
+            margin-top: 12px;
+            padding-top: 10px;
+            border-top: 1px solid var(--border);
+        }
+
+        .btn-mini {
+            background: var(--body-color);
+            border: 1px solid var(--border);
+            color: var(--text-color);
+            width: 30px;
+            height: 30px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .btn-mini:hover { background: var(--primary-color); color: white; border-color: var(--primary-color); }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 1100;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Indicador de atualização automática */
+        .auto-refresh-badge {
+            font-size: 11px;
+            opacity: 0.5;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        @media (max-width: 1024px) { .kanban-container { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body class="body-site">
+
+<div id="sidebar-placeholder"></div>
+
+<section class="home-section">
+    <div class="content-area">
+
+        <div class="welcome-container" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <div>
+                <h2 style="color: var(--primary-color);"><i class='bx bx-columns'></i> Painel de Atendimento</h2>
+                <p id="data-atual" style="opacity: 0.7;"></p>
+            </div>
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <span class="auto-refresh-badge"><i class='bx bx-time-five'></i> Atualiza a cada 60s</span>
+                <button id="btn-atualizar" class="btn-mini" style="width: auto; padding: 0 15px;">
+                    <i class='bx bx-refresh'></i>&nbsp; Atualizar
+                </button>
+            </div>
+        </div>
+
+        <div class="kanban-container">
+            <div class="kanban-column">
+                <div class="column-header"><h3>Agendados</h3><span class="count-badge" id="count-agendado">0</span></div>
+                <div id="lista-agendado"></div>
+            </div>
+            <div class="kanban-column">
+                <div class="column-header"><h3>Recepção</h3><span class="count-badge" id="count-espera">0</span></div>
+                <div id="lista-espera"></div>
+            </div>
+            <div class="kanban-column">
+                <div class="column-header"><h3>Em Consulta</h3><span class="count-badge" id="count-atendimento">0</span></div>
+                <div id="lista-atendimento"></div>
+            </div>
+            <div class="kanban-column">
+                <div class="column-header"><h3>Concluídos</h3><span class="count-badge" id="count-concluido">0</span></div>
+                <div id="lista-concluido"></div>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+<!-- MODAL RETORNO -->
+<div id="modal-retorno" class="modal-overlay">
+    <div class="modal-content" style="background: var(--bg-card); width: 90%; max-width: 450px; padding: 25px; border-radius: 12px; border: 1px solid var(--border);">
+        <h3 style="color: var(--primary-color); margin-bottom: 15px;">Marcar Retorno</h3>
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+            <label style="font-size: 11px; font-weight: 700; opacity: 0.7;">PACIENTE</label>
+            <input type="text" id="ret-nome" class="form-control" readonly style="background: var(--primary-color-light);">
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div>
+                    <label style="font-size: 11px; font-weight: 700; color: var(--primary-color);">DISCIPLINA *</label>
+                    <select id="ret-disc" class="form-control"></select>
+                </div>
+                <div>
+                    <label style="font-size: 11px; font-weight: 700; opacity: 0.7;">TELEFONE</label>
+                    <input type="text" id="ret-tel" class="form-control" readonly style="background: var(--primary-color-light);">
+                </div>
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid var(--border); margin: 10px 0;">
+            <label style="font-size: 11px; font-weight: 700; color: var(--primary-color);">NOVA DATA *</label>
+            <input type="date" id="ret-data" class="form-control">
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div>
+                    <label style="font-size: 11px; font-weight: 700; color: var(--primary-color);">INÍCIO *</label>
+                    <input type="time" id="ret-inicio" class="form-control">
+                </div>
+                <div>
+                    <label style="font-size: 11px; font-weight: 700; opacity: 0.7;">FIM</label>
+                    <input type="time" id="ret-fim" class="form-control">
+                </div>
+            </div>
+        </div>
+        <div style="display: flex; gap: 10px; margin-top: 20px;">
+            <button id="btn-salvar-retorno" class="btn-mini" style="flex: 2; background: var(--primary-color); color: white; height: 40px; font-weight: 700;">AGENDAR</button>
+            <button id="btn-fechar-modal" class="btn-mini" style="flex: 1; height: 40px;">SAIR</button>
+        </div>
+    </div>
+</div>
+
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="auth.js"></script>
+
+<script>
+    const FLUXO = { agendado: 'espera', espera: 'atendimento', atendimento: 'concluido' };
+    let intervaloAutoRefresh = null;
+
+    // ── CARREGAR KANBAN ────────────────────────────────────────────────────────
+    async function carregarDadosKanban() {
+        const user = verificarSessao();
+        if (!user) return;
+
+        const hoje = new Date().toLocaleDateString('en-CA');
+        document.getElementById('data-atual').innerText =
+            new Date().toLocaleDateString('pt-BR', { dateStyle: 'full' });
+
+        const { data, error } = await _supabase
+            .from('agendamentos')
+            .select('*')
+            .eq('data', hoje)
+            .order('hora_inicio', { ascending: true });
+
+        if (error) return console.error('[kanban]', error);
+
+        // Limpa colunas
+        ['agendado', 'espera', 'atendimento', 'concluido'].forEach(s => {
+            document.getElementById(`lista-${s}`).innerHTML = '';
+            document.getElementById(`count-${s}`).innerText = '0';
+        });
+
+        // CORRIGIDO: usa DocumentFragment para evitar reflow a cada card
+        const fragments = {
+            agendado: document.createDocumentFragment(),
+            espera: document.createDocumentFragment(),
+            atendimento: document.createDocumentFragment(),
+            concluido: document.createDocumentFragment()
+        };
+        const counts = { agendado: 0, espera: 0, atendimento: 0, concluido: 0 };
+
+        data.forEach(item => {
+            const st = item.status || 'agendado';
+            if (!fragments[st]) return;
+
+            counts[st]++;
+
+            const card = document.createElement('div');
+            card.className = `kanban-card col-${st}`;
+
+            const btnMover = FLUXO[st]
+                ? `<button class="btn-mini" data-id="${item.id}" data-status="${st}" title="Avançar"><i class='bx bx-right-arrow-alt'></i></button>`
+                : '';
+
+            card.innerHTML = `
+                <div class="card-time"><i class='bx bx-time'></i> ${item.hora_inicio.substring(0, 5)}</div>
+                <div class="card-name">${item.nome}</div>
+                <div class="card-disc">${item.disciplina}</div>
+                <div class="card-actions">
+                    ${btnMover}
+                    <button class="btn-mini" title="Retorno"
+                        data-retorno-nome="${encodeURIComponent(item.nome)}"
+                        data-retorno-disc="${encodeURIComponent(item.disciplina)}"
+                        data-retorno-tel="${item.telefone || ''}"
+                        data-retorno-idade="${item.idade || ''}">
+                        <i class='bx bx-redo'></i>
+                    </button>
+                    <button class="btn-mini" title="Editar"
+                        data-edit-url="agendar.html?id=${item.id}&nome=${encodeURIComponent(item.nome)}&data=${item.data}&hora=${item.hora_inicio}&disc=${encodeURIComponent(item.disciplina)}&tel=${encodeURIComponent(item.telefone || '')}&idade=${item.idade || ''}&obs=${encodeURIComponent(item.obs || '')}">
+                        <i class='bx bx-edit'></i>
+                    </button>
+                </div>
+            `;
+
+            fragments[st].appendChild(card);
+        });
+
+        // Insere todos os fragments de uma vez no DOM
+        Object.keys(fragments).forEach(st => {
+            document.getElementById(`lista-${st}`).appendChild(fragments[st]);
+            document.getElementById(`count-${st}`).innerText = counts[st];
+        });
+    }
+
+    // ── DISCIPLINAS DO MODAL ───────────────────────────────────────────────────
+    async function carregarDisciplinasRetorno() {
+        const { data } = await _supabase.from('grade_config').select('especialidade');
+        const sel = document.getElementById('ret-disc');
+        if (!data || !sel) return;
+        sel.innerHTML = '<option value="">Selecione...</option>';
+        [...new Set(data.map(d => d.especialidade))].forEach(esp =>
+            sel.add(new Option(esp.toUpperCase(), esp))
+        );
+    }
+
+    // ── MOVER STATUS ───────────────────────────────────────────────────────────
+    async function moverStatus(id, statusAtual) {
+        await _supabase.from('agendamentos').update({ status: FLUXO[statusAtual] }).eq('id', id);
+        carregarDadosKanban();
+    }
+
+    // ── MODAL RETORNO ──────────────────────────────────────────────────────────
+    function abrirModalRetorno(nome, disc, tel, idade) {
+        document.getElementById('ret-nome').value  = decodeURIComponent(nome);
+        document.getElementById('ret-tel').value   = tel;
+        document.getElementById('ret-disc').value  = decodeURIComponent(disc);
+        document.getElementById('modal-retorno').dataset.idade = idade;
+        document.getElementById('modal-retorno').style.display = 'flex';
+    }
+
+    function fecharModal() {
+        document.getElementById('modal-retorno').style.display = 'none';
+    }
+
+    async function salvarRetornoPopup() {
+        const user     = verificarSessao();
+        const rawIdade = document.getElementById('modal-retorno').dataset.idade;
+        const btn      = document.getElementById('btn-salvar-retorno');
+
+        const payload = {
+            nome:        document.getElementById('ret-nome').value,
+            disciplina:  document.getElementById('ret-disc').value,
+            telefone:    document.getElementById('ret-tel').value || null,
+            idade:       (rawIdade && rawIdade !== 'undefined' && rawIdade !== '') ? parseInt(rawIdade) : null,
+            data:        document.getElementById('ret-data').value,
+            hora_inicio: document.getElementById('ret-inicio').value,
+            hora_fim:    document.getElementById('ret-fim').value || null,
+            status:      'agendado',
+            criado_por:  user.login
+        };
+
+        if (!payload.data || !payload.hora_inicio || !payload.disciplina) {
+            return alert("Preencha Data, Hora e Disciplina!");
+        }
+
+        btn.disabled = true;
+        btn.innerText = "Salvando...";
+
+        const { error } = await _supabase.from('agendamentos').insert([payload]);
+
+        if (error) {
+            alert("Erro ao salvar: " + error.message);
+        } else {
+            alert("Retorno agendado!");
+            fecharModal();
+            carregarDadosKanban();
+        }
+
+        btn.disabled = false;
+        btn.innerText = "AGENDAR";
+    }
+
+    // ── DELEGAÇÃO DE EVENTOS (substitui todos os onclick inline nos cards) ─────
+    document.addEventListener('click', e => {
+        const btn = e.target.closest('[data-id][data-status]');
+        if (btn) { moverStatus(btn.dataset.id, btn.dataset.status); return; }
+
+        const retorno = e.target.closest('[data-retorno-nome]');
+        if (retorno) {
+            abrirModalRetorno(
+                retorno.dataset.retornoNome,
+                retorno.dataset.retornoDisc,
+                retorno.dataset.retornoTel,
+                retorno.dataset.retornoIdade
+            );
+            return;
+        }
+
+        const edit = e.target.closest('[data-edit-url]');
+        if (edit) { window.location.href = edit.dataset.editUrl; return; }
+
+        // Fecha modal clicando fora
+        if (e.target.id === 'modal-retorno') fecharModal();
+    });
+
+    // ── INICIALIZAÇÃO ──────────────────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', () => {
+        carregarDadosKanban();
+        carregarDisciplinasRetorno();
+
+        // Botão atualizar manual
+        document.getElementById('btn-atualizar').addEventListener('click', carregarDadosKanban);
+
+        // Botões do modal via addEventListener
+        document.getElementById('btn-salvar-retorno').addEventListener('click', salvarRetornoPopup);
+        document.getElementById('btn-fechar-modal').addEventListener('click', fecharModal);
+
+        // CORRIGIDO: atualização automática a cada 60 segundos
+        intervaloAutoRefresh = setInterval(carregarDadosKanban, 60000);
+    });
+</script>
+
+</body>
+</html>

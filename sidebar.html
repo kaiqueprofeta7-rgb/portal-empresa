@@ -1,0 +1,74 @@
+<nav class="sidebar close">
+    <header>
+        <div class="image-text">
+            <span class="image">
+                <i class='bx bxs-clinic text-crimson' style="font-size: 40px; color: #dc143c;"></i>
+            </span>
+            <div class="text logo-text">
+                <span class="name">Portal</span>
+                <span class="profession" id="user-display-name">Carregando...</span>
+            </div>
+        </div>
+        <i class='bx bx-chevron-right toggle'></i>
+    </header>
+
+    <div class="menu-bar">
+        <div class="menu">
+            <ul class="menu-links">
+                <li class="nav-link">
+                    <a href="inicio.html">
+                        <i class='bx bx-home-alt icon'></i>
+                        <span class="text nav-text">Início</span>
+                    </a>
+                </li>
+
+                <li class="nav-link" id="nav-agendar" style="display:none;">
+                    <a href="agendar.html">
+                        <i class='bx bx-plus-circle icon'></i>
+                        <span class="text nav-text">Novo Agendamento</span>
+                    </a>
+                </li>
+                
+                <li class="nav-link" id="nav-agenda" style="display:none;">
+                    <a href="kanban.html">
+                        <i class='bx bx-columns icon'></i>
+                        <span class="text nav-text">Fluxo Diário</span>
+                    </a>
+                </li>
+
+                <li class="nav-link" id="nav-agenda-mensal" style="display:none;">
+                    <a href="agenda-mensal.html">
+                        <i class='bx bx-calendar icon'></i>
+                        <span class="text nav-text">Agenda Mensal</span>
+                    </a>
+                </li>
+
+                <li class="nav-link" id="nav-config" style="display:none;">
+                    <a href="configuracoes.html">
+                        <i class='bx bx-cog icon'></i>
+                        <span class="text nav-text">Configurações</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="bottom-content">
+            <li>
+                <a href="#" onclick="fazerLogout()">
+                    <i class='bx bx-log-out icon'></i>
+                    <span class="text nav-text">Sair</span>
+                </a>
+            </li>
+            <li class="mode">
+                <div class="sun-moon">
+                    <i class='bx bx-moon icon moon'></i>
+                    <i class='bx bx-sun icon sun'></i>
+                </div>
+                <span class="mode-text text">Modo Escuro</span>
+                <div class="toggle-switch">
+                    <span class="switch"></span>
+                </div>
+            </li>
+        </div>
+    </div>
+</nav>

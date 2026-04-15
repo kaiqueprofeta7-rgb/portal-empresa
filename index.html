@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal Empresa - Acesso</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel='stylesheet' href='https://unpkg.com/boxicons@2.1.1/css/boxicons.min.css'>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="style.css">
+
+    <script>
+        if (localStorage.getItem('theme') === 'dark' || !localStorage.getItem('theme')) {
+            document.documentElement.classList.add('dark');
+        }
+    </script>
+
+    <style>
+        /* MANTIDO TODO O SEU CSS ORIGINAL */
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+
+        body {
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            min-height: 100vh; background: var(--body-color); padding: 20px; overflow-x: hidden;
+            transition: var(--tran-05);
+        }
+
+        .theme-toggle-login {
+            position: absolute; top: 20px; right: 20px;
+            background: var(--bg-card); color: var(--text-color);
+            width: 45px; height: 45px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            font-size: 22px; z-index: 100; border: 1px solid var(--border);
+            transition: var(--tran-05);
+        }
+        .theme-toggle-login:hover { background: var(--primary-color); color: #fff; border-color: var(--primary-color); }
+
+        .footer { margin-top: 30px; text-align: center; padding: 15px; font-size: 14px; color: var(--text-color); z-index: 10; }
+        .footer a { color: var(--primary-color); text-decoration: none; font-weight: 600; transition: .3s; }
+        .footer a:hover { filter: brightness(1.2); text-decoration: underline; }
+
+        .auth-wrapper {
+            position: relative; width: 100%; max-width: 800px; height: 500px;
+            border: 1px solid var(--border); 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1); overflow: hidden;
+            background: var(--bg-card); z-index: 1; border-radius: 15px;
+            transition: var(--tran-05);
+        }
+
+        .auth-wrapper .credentials-panel {
+            position: absolute; top: 0; width: 50%; height: 100%;
+            display: flex; justify-content: center; flex-direction: column; z-index: 2;
+        }
+
+        .credentials-panel.signin { left: 0; padding: 0 40px; }
+        .credentials-panel.signin .slide-element { transform: translateX(0%); transition: .7s; opacity: 1; }
+        .credentials-panel.signin .slide-element:nth-child(1) { transition-delay: 2.1s; }
+        .credentials-panel.signin .slide-element:nth-child(2) { transition-delay: 2.2s; }
+        .auth-wrapper.toggled .credentials-panel.signin .slide-element { transform: translateX(-120%); opacity: 0; }
+        .auth-wrapper.toggled .credentials-panel.signin .slide-element:nth-child(1) { transition-delay: 0s; }
+        .auth-wrapper.toggled .credentials-panel.signin .slide-element:nth-child(2) { transition-delay: 0.1s; }
+
+        .credentials-panel.signup { right: 0; padding: 0 60px; pointer-events: none; }
+        .auth-wrapper.toggled .credentials-panel.signup { pointer-events: auto; }
+        .credentials-panel.signup .slide-element { transform: translateX(120%); transition: .7s ease; opacity: 0; filter: blur(10px); }
+        .credentials-panel.signup .slide-element:nth-child(1) { transition-delay: 0s; }
+        .credentials-panel.signup .slide-element:nth-child(2) { transition-delay: 0.1s; }
+        .auth-wrapper.toggled .credentials-panel.signup .slide-element { transform: translateX(0%); opacity: 1; filter: blur(0px); }
+        .auth-wrapper.toggled .credentials-panel.signup .slide-element:nth-child(1) { transition-delay: 1.7s; }
+        .auth-wrapper.toggled .credentials-panel.signup .slide-element:nth-child(2) { transition-delay: 1.8s; }
+
+        .credentials-panel h2 { font-size: 32px; text-align: center; color: var(--text-color); transition: var(--tran-05); }
+        .credentials-panel .field-wrapper { position: relative; width: 100%; height: 50px; margin-top: 25px; }
+        
+        .field-wrapper input {
+            width: 100%; height: 100%; background: transparent; border: none; outline: none;
+            font-size: 16px; color: var(--text-color); font-weight: 600; border-bottom: 2px solid var(--border);
+            padding-right: 23px; transition: .5s;
+        }
+        .field-wrapper input:focus, .field-wrapper input:valid { border-bottom: 2px solid var(--primary-color); }
+        
+        .field-wrapper label {
+            position: absolute; top: 50%; left: 0; transform: translateY(-50%);
+            font-size: 16px; color: var(--text-color); transition: .5s; pointer-events: none; opacity: 0.7;
+        }
+        .field-wrapper input:focus~label, .field-wrapper input:valid~label { top: -5px; color: var(--primary-color); font-size: 12px; opacity: 1; font-weight: 600; }
+        
+        .field-wrapper i { position: absolute; top: 50%; right: 0; font-size: 18px; transform: translateY(-50%); color: var(--text-color); opacity: 0.5; transition: 0.3s; }
+        .field-wrapper input:focus~i, .field-wrapper input:valid~i { color: var(--primary-color); opacity: 1; }
+
+        .submit-button {
+            position: relative; width: 100%; height: 45px; background: transparent; border-radius: 8px;
+            cursor: pointer; font-size: 16px; font-weight: 600; border: 2px solid var(--primary-color);
+            overflow: hidden; z-index: 1; margin-top: 15px; color: var(--primary-color); transition: 0.3s;
+        }
+        .submit-button::before {
+            content: ""; position: absolute; height: 100%; width: 0%;
+            background: var(--primary-color);
+            top: 0; left: 0; z-index: -1; transition: .4s ease;
+        }
+        .submit-button:hover { color: #fff; }
+        .submit-button:hover:before { width: 100%; }
+
+        .switch-link { font-size: 14px; text-align: center; margin: 20px 0 10px; color: var(--text-color); transition: var(--tran-05); }
+        .switch-link a { text-decoration: none; color: var(--primary-color); font-weight: 600; transition: 0.3s; }
+        .switch-link a:hover { text-decoration: underline; filter: brightness(1.2); }
+
+        .welcome-section { position: absolute; top: 0; height: 100%; width: 50%; display: flex; justify-content: center; flex-direction: column; z-index: 2; pointer-events: none; }
+        
+        .welcome-section h2 { text-transform: uppercase; font-size: 36px; line-height: 1.3; color: #ffffff !important; text-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+
+        .welcome-section.signin { right: 0; text-align: right; padding: 0 40px 60px 150px; }
+        .welcome-section.signin .slide-element { transform: translateX(0); transition: .7s ease; opacity: 1; filter: blur(0px); transition-delay: 2.0s; }
+        .auth-wrapper.toggled .welcome-section.signin .slide-element { transform: translateX(120%); opacity: 0; filter: blur(10px); transition-delay: 0s; }
+        
+        .welcome-section.signup { left: 0; text-align: left; padding: 0 150px 60px 38px; }
+        .welcome-section.signup .slide-element { transform: translateX(-120%); transition: .7s ease; opacity: 0; filter: blur(10px); transition-delay: 0s; }
+        .auth-wrapper.toggled .welcome-section.signup .slide-element { transform: translateX(0%); opacity: 1; filter: blur(0); transition-delay: 1.7s; }
+
+        .auth-wrapper .background-shape {
+            position: absolute; right: 0; top: -5px; height: 600px; width: 850px;
+            background: var(--primary-color); transform: rotate(10deg) skewY(40deg);
+            transform-origin: bottom right; transition: 1.5s ease; transition-delay: 1.6s; z-index: 0; opacity: 0.95;
+        }
+        .auth-wrapper.toggled .background-shape { transform: rotate(0deg) skewY(0deg); transition-delay: .5s; }
+
+        .auth-wrapper .secondary-shape {
+            position: absolute; left: 250px; top: 100%; height: 700px; width: 850px;
+            background: var(--bg-card); border-top: 5px solid var(--primary-color); transform: rotate(0deg) skewY(0deg);
+            transform-origin: bottom left; transition: 1.5s ease; transition-delay: .5s; z-index: 0;
+        }
+        .auth-wrapper.toggled .secondary-shape { transform: rotate(-11deg) skewY(-41deg); transition-delay: 1.2s; }
+
+        .msg-status { text-align: center; font-size: 13px; margin-top: 10px; font-weight: 600; height: 15px; }
+
+        @media (max-width: 768px) {
+            .auth-wrapper { height: auto; min-height: 500px; flex-direction: column; overflow: visible; border: none; box-shadow: none; background: transparent; }
+            .auth-wrapper .credentials-panel, .welcome-section { width: 100%; position: relative; background: var(--bg-card); border-radius: 12px; padding: 30px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+            .credentials-panel.signin, .credentials-panel.signup { padding: 40px 30px; left: 0; right: 0; }
+            .credentials-panel.signup { display: none; }
+            .auth-wrapper.toggled .credentials-panel.signin { display: none; }
+            .auth-wrapper.toggled .credentials-panel.signup { display: flex; animation: fadeInUp 0.6s ease forwards; }
+            .welcome-section, .background-shape, .secondary-shape { display: none !important; }
+            @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        }
+    </style>
+</head>
+
+<body class="body-site">
+    
+    <div class="theme-toggle-login" id="theme-btn" title="Alternar Tema">
+        <i class='bx bx-moon moon-icon'></i>
+        <i class='bx bx-sun sun-icon' style="display:none;"></i>
+    </div>
+
+    <div class="auth-wrapper">
+        <div class="background-shape"></div>
+        <div class="secondary-shape"></div>
+        
+        <div class="credentials-panel signin">
+            <h2 class="slide-element">Acesso ao Portal</h2>
+            <form onsubmit="event.preventDefault(); realizarLogin();" class="slide-element">
+                <div class="field-wrapper">
+                    <input type="text" id="login" required>
+                    <label>Usuário</label>
+                    <i class="fa-solid fa-user"></i>
+                </div>
+                <div class="field-wrapper">
+                    <input type="password" id="senha" required>
+                    <label>Senha</label>
+                    <i class="fa-solid fa-lock"></i>
+                </div>
+                
+                <p id="msg-login" class="msg-status"></p>
+                <button class="submit-button" type="submit">Entrar no Sistema</button>
+                
+                <div class="switch-link">
+                    <p>Ainda não tem conta? <br> <a href="#" class="register-trigger">Solicitar Acesso</a></p>
+                </div>
+            </form>
+        </div>
+
+        <div class="welcome-section signin">
+            <h2 class="slide-element">BEM-VINDO<br>DE VOLTA!</h2>
+        </div>
+
+        <div class="credentials-panel signup">
+            <h2 class="slide-element">Novo Registro</h2>
+            <form onsubmit="event.preventDefault(); cadastrarUsuario();" class="slide-element">
+                <div class="field-wrapper">
+                    <input type="text" id="reg-nome" required>
+                    <label>Nome Completo</label>
+                    <i class="fa-solid fa-id-card"></i>
+                </div>
+                <div class="field-wrapper">
+                    <input type="text" id="reg-login" required>
+                    <label>Escolha um Usuário</label>
+                    <i class="fa-solid fa-user"></i>
+                </div>
+                <div class="field-wrapper">
+                    <input type="password" id="reg-senha" required>
+                    <label>Crie uma Senha</label>
+                    <i class="fa-solid fa-lock"></i>
+                </div>
+
+                <div style="display:none">
+                    <input type="checkbox" id="perm_agendar">
+                    <input type="checkbox" id="perm_agenda">
+                    <input type="checkbox" id="perm_config">
+                </div>
+
+                <p id="msg-cadastro" class="msg-status"></p>
+                <button class="submit-button" type="submit">Registrar Conta</button>
+
+                <div class="switch-link">
+                    <p>Já possui conta? <br> <a href="#" class="login-trigger">Fazer Login</a></p>
+                </div>
+            </form>
+        </div>
+
+        <div class="welcome-section signup">
+            <h2 class="slide-element">NOVO AQUI?<br>JUNTE-SE A NÓS</h2>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>Portal Administrativo &copy; 2026</p>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
+    <script src="auth.js"></script>
+
+    <script>
+        // MANTIDA TODA A SUA LÓGICA DE INTERFACE ORIGINAL
+        const themeBtn = document.getElementById('theme-btn');
+        const moonIcon = document.querySelector('.moon-icon');
+        const sunIcon = document.querySelector('.sun-icon');
+        const bodyEl = document.body;
+        const htmlEl = document.documentElement;
+
+        if (htmlEl.classList.contains('dark') || bodyEl.classList.contains('dark')) {
+            bodyEl.classList.add('dark');
+            moonIcon.style.display = 'none';
+            sunIcon.style.display = 'block';
+        }
+
+        themeBtn.addEventListener('click', () => {
+            bodyEl.classList.toggle('dark');
+            htmlEl.classList.toggle('dark');
+            const isDark = bodyEl.classList.contains('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            if (isDark) {
+                moonIcon.style.display = 'none';
+                sunIcon.style.display = 'block';
+            } else {
+                moonIcon.style.display = 'block';
+                sunIcon.style.display = 'none';
+            }
+        });
+
+        const authWrapper = document.querySelector('.auth-wrapper');
+        const loginTrigger = document.querySelector('.login-trigger');
+        const registerTrigger = document.querySelector('.register-trigger');
+
+        registerTrigger.addEventListener('click', (e) => {
+            e.preventDefault();
+            authWrapper.classList.add('toggled');
+            document.getElementById('msg-login').innerText = ''; 
+        });
+
+        loginTrigger.addEventListener('click', (e) => {
+            e.preventDefault();
+            authWrapper.classList.remove('toggled');
+            document.getElementById('msg-cadastro').innerText = ''; 
+        });
+
+        // Verificação inicial de sessão
+        if (typeof verificarSessao === 'function' && verificarSessao()) {
+            window.location.href = 'inicio.html';
+        }
+    </script>
+</body>
+</html>

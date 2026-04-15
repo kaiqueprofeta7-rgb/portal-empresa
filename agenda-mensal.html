@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agenda Mensal | Portal Empresa</title>
+    
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="style.css">
+
+    <script>
+        tailwind.config = { 
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        crimson: '#dc143c',
+                        darkBg: '#0f172a',
+                        darkCard: '#1e293b'
+                    }
+                }
+            }
+        }
+        function applyTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark') document.documentElement.classList.add('dark');
+            else document.documentElement.classList.remove('dark');
+        }
+        applyTheme();
+    </script>
+
+    <style>
+        :root { --primary-crimson: #dc143c; }
+        .home-section {
+            position: relative;
+            background: var(--body-color);
+            min-height: 100vh;
+            left: 88px;
+            width: calc(100% - 88px);
+            transition: all 0.5s ease;
+            padding: 20px;
+        }
+
+        html:not(.dark) body { background-color: #f8fafc !important; color: #0f172a !important; }
+        html:not(.dark) .bg-card-custom { background-color: #ffffff !important; border: 1px solid #e2e8f0 !important; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05); }
+        
+        html.dark body { background-color: #020617 !important; color: #f1f5f9 !important; }
+        html.dark .bg-card-custom { background-color: #0f172a !important; border: 1px solid #1e293b !important; box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.5); }
+
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); }
+        .day-active { background: linear-gradient(135deg, #dc143c, #b01030) !important; color: white !important; border-radius: 9999px; box-shadow: 0 4px 12px rgba(220, 20, 60, 0.4); }
+        
+        .modal-overlay {
+            backdrop-filter: blur(8px);
+            background-color: rgba(0, 0, 0, 0.75);
+        }
+
+        #agendamentosList::-webkit-scrollbar { width: 5px; }
+        #agendamentosList::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+    </style>
+</head>
+<body class="transition-colors duration-300">
+
+    <div id="sidebar-placeholder"></div>
+
+    <div id="reagendarModal" class="modal-overlay fixed inset-0 z-[9999] hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-900 w-full max-w-md rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] border border-gray-100 dark:border-slate-800 overflow-hidden transform transition-all scale-100">
+            <div class="p-6 border-b border-gray-100 dark:border-slate-800 flex justify-between items-center bg-gray-50/50 dark:bg-slate-800/30">
+                <h3 class="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                    <i class='bx bx-repost text-crimson text-2xl'></i> Reagendar
+                </h3>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-crimson dark:hover:text-white transition-colors text-3xl no-click">&times;</button>
+            </div>
+            <div class="p-7 space-y-6">
+                <div>
+                    <label class="block text-[11px] font-black text-gray-400 dark:text-slate-500 uppercase mb-2 tracking-widest">Especialidade</label>
+                    <select id="modalDisc" class="w-full p-3.5 rounded-2xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-950 dark:text-white text-sm outline-none focus:ring-2 focus:ring-crimson transition-all"></select>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[11px] font-black text-gray-400 dark:text-slate-500 uppercase mb-2 tracking-widest">Data</label>
+                        <input type="date" id="modalData" class="w-full p-3.5 rounded-2xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-950 dark:text-white text-sm outline-none focus:ring-2 focus:ring-crimson">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-black text-gray-400 dark:text-slate-500 uppercase mb-2 tracking-widest">Horário</label>
+                        <input type="time" id="modalHora" class="w-full p-3.5 rounded-2xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-950 dark:text-white text-sm outline-none focus:ring-2 focus:ring-crimson">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-black text-gray-400 dark:text-slate-500 uppercase mb-2 tracking-widest">Notas de Evolução</label>
+                    <textarea id="modalObs" rows="3" class="w-full p-3.5 rounded-2xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-950 dark:text-white text-sm outline-none focus:ring-2 focus:ring-crimson" placeholder="Descreva observações..."></textarea>
+                </div>
+            </div>
+            <div class="p-6 bg-gray-50 dark:bg-slate-800/50 flex gap-4">
+                <button onclick="closeModal()" class="flex-1 py-4 rounded-2xl font-black text-xs text-gray-500 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-slate-700 transition-all uppercase tracking-tighter">Cancelar</button>
+                <button id="btnConfirmarReagendamento" class="flex-[1.5] py-4 rounded-2xl font-black text-xs bg-crimson text-white hover:brightness-110 shadow-lg shadow-red-600/30 transition-all uppercase tracking-tighter">Confirmar Registro</button>
+            </div>
+        </div>
+    </div>
+
+    <section class="home-section">
+        <div class="max-w-6xl mx-auto">
+            <header class="mb-10 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+                <div>
+                    <h1 class="text-3xl font-black dark:text-white text-slate-900 tracking-tight flex items-center gap-3">
+                        <i class='bx bx-calendar-event text-crimson'></i> Portal Agenda
+                    </h1>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button id="btnToday" class="px-5 py-2.5 bg-crimson text-white text-[11px] font-black rounded-xl hover:scale-105 shadow-lg shadow-red-600/20 transition-all uppercase no-click">Hoje</button>
+                    <div class="relative">
+                        <i class='bx bx-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400'></i>
+                        <input type="text" id="searchInput" placeholder="Pesquisar..." class="pl-11 pr-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-crimson w-64 transition-all">
+                    </div>
+                </div>
+            </header>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="lg:col-span-2 space-y-6">
+                    <div class="flex items-center justify-between border-b dark:border-slate-800 pb-4">
+                        <h2 id="currentViewTitle" class="text-xl font-bold text-crimson uppercase tracking-tighter">Agendamentos</h2>
+                        <span id="resultCount" class="text-[10px] bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-lg font-black dark:text-slate-400 text-slate-500">0 ITENS</span>
+                    </div>
+                    <div id="agendamentosList" class="space-y-4 max-h-[75vh] overflow-y-auto pr-3"></div>
+                </div>
+                
+                <aside class="space-y-6">
+                    <div class="bg-card-custom p-6 rounded-3xl transition-all">
+                        <div class="flex items-center justify-between mb-6">
+                            <button id="prevMonth" class="p-2.5 bg-slate-50 dark:bg-slate-800 hover:bg-crimson hover:text-white rounded-xl transition-all no-click"><i class='bx bx-chevron-left'></i></button>
+                            <h3 id="calendarMonth" class="font-black capitalize text-xs dark:text-white tracking-widest text-slate-900"></h3>
+                            <button id="nextMonth" class="p-2.5 bg-slate-50 dark:bg-slate-800 hover:bg-crimson hover:text-white rounded-xl transition-all no-click"><i class='bx bx-chevron-right'></i></button>
+                        </div>
+                        <div class="calendar-grid text-center text-[10px] font-black text-slate-400 dark:text-slate-600 uppercase mb-4 tracking-tighter">
+                            <div>Dom</div><div>Seg</div><div>Ter</div><div>Qua</div><div>Qui</div><div>Sex</div><div>Sab</div>
+                        </div>
+                        <div id="calendarDays" class="calendar-grid text-center gap-2"></div>
+                    </div>
+                </aside>
+            </div>
+        </div>
+    </section>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
+    <script src="auth.js"></script>
+    <script src="script.js"></script>
+
+    <script>
+        let allAgendamentos = [];
+        let viewDate = new Date();
+        let selectedDate = new Date();
+        let currentItemParaReagendar = null;
+
+        async function init() {
+            if (typeof _supabase === 'undefined') { setTimeout(init, 500); return; }
+            await fetchDisciplinas(); 
+            await fetchAgendamentos();
+            renderCalendar();
+            
+            document.getElementById('prevMonth').onclick = () => { viewDate.setMonth(viewDate.getMonth() - 1); renderCalendar(); };
+            document.getElementById('nextMonth').onclick = () => { viewDate.setMonth(viewDate.getMonth() + 1); renderCalendar(); };
+            document.getElementById('btnToday').onclick = () => { 
+                viewDate = new Date(); 
+                selectedDate = new Date(); 
+                renderCalendar(); 
+                filterAndRender(selectedDate); 
+            };
+            document.getElementById('searchInput').oninput = handleSearch;
+        }
+
+        async function fetchDisciplinas() {
+            try {
+                const { data } = await _supabase.from('grade_config').select('especialidade');
+                const unicas = [...new Set(data.map(item => item.especialidade))].filter(d => d).sort();
+                const select = document.getElementById('modalDisc');
+                select.innerHTML = unicas.map(d => `<option value="${d}">${d}</option>`).join('');
+            } catch (err) { console.error(err); }
+        }
+
+        async function fetchAgendamentos() {
+            try {
+                const { data } = await _supabase.from('agendamentos').select('*');
+                allAgendamentos = data || [];
+                filterAndRender(selectedDate);
+            } catch (err) { console.error(err); }
+        }
+
+        function openReagendar(itemJson) {
+            const item = JSON.parse(decodeURIComponent(itemJson));
+            currentItemParaReagendar = item;
+            document.getElementById('modalDisc').value = item.disciplina || '';
+            document.getElementById('modalData').value = item.data;
+            document.getElementById('modalHora').value = item.hora_inicio;
+            document.getElementById('modalObs').value = item.obs || '';
+            document.getElementById('reagendarModal').classList.remove('hidden');
+        }
+
+        function closeModal() { document.getElementById('reagendarModal').classList.add('hidden'); }
+
+        document.getElementById('btnConfirmarReagendamento').onclick = async () => {
+            const novaData = document.getElementById('modalData').value;
+            const novaHora = document.getElementById('modalHora').value;
+            const novaDisc = document.getElementById('modalDisc').value;
+            const novaObs = document.getElementById('modalObs').value;
+            if(!novaData || !novaHora) return alert("Preencha data e hora.");
+
+            try {
+                const { error } = await _supabase.from('agendamentos').insert([{
+                    nome: currentItemParaReagendar.nome,
+                    telefone: currentItemParaReagendar.telefone,
+                    idade: currentItemParaReagendar.idade,
+                    disciplina: novaDisc,
+                    data: novaData,
+                    hora_inicio: novaHora,
+                    obs: novaObs,
+                    status: 'agendado'
+                }]);
+                if (error) throw error;
+                alert("Novo agendamento realizado!");
+                closeModal();
+                location.reload();
+            } catch (err) { alert(err.message); }
+        };
+
+        function renderList(list) {
+            const container = document.getElementById('agendamentosList');
+            document.getElementById('resultCount').innerText = `${list.length} ITENS`;
+
+            const sortedList = [...list].sort((a,b) => {
+                if(a.disciplina !== b.disciplina) return a.disciplina.localeCompare(b.disciplina);
+                return a.hora_inicio.localeCompare(b.hora_inicio);
+            });
+
+            container.innerHTML = sortedList.length === 0 ? '<div class="py-20 text-center opacity-30 dark:text-slate-500 font-bold">Nenhum compromisso agendado.</div>' : "";
+
+            let lastDisc = "";
+            sortedList.forEach(item => {
+                if(item.disciplina !== lastDisc){
+                    lastDisc = item.disciplina;
+                    container.innerHTML += `
+                        <div class="mt-8 mb-4 flex items-center gap-4">
+                            <span class="text-[11px] font-black text-crimson uppercase tracking-[0.2em] whitespace-nowrap">${lastDisc}</span>
+                            <span class="h-[1px] w-full bg-slate-200 dark:bg-slate-800"></span>
+                        </div>`;
+                }
+
+                const itemData = encodeURIComponent(JSON.stringify(item));
+                const editUrl = `agendar.html?id=${item.id}&nome=${encodeURIComponent(item.nome || '')}&data=${item.data}&hora=${item.hora_inicio || ''}&hora_fim=${item.hora_fim || ''}&disc=${encodeURIComponent(item.disciplina || '')}&tel=${encodeURIComponent(item.telefone || '')}&idade=${item.idade || ''}&obs=${encodeURIComponent(item.obs || '')}`;
+
+                container.innerHTML += `
+                    <div class="bg-card-custom p-5 rounded-2xl flex flex-col group hover:border-crimson transition-all cursor-pointer" 
+                         onclick="if(!event.target.closest('.no-click')) this.querySelector('.details').classList.toggle('hidden')">
+                        <div class="flex justify-between items-center">
+                            <div class="flex items-center gap-4">
+                                <div class="w-1.5 h-10 bg-crimson rounded-full opacity-0 group-hover:opacity-100 transition-all"></div>
+                                <div>
+                                    <h4 class="font-black text-lg dark:text-white text-slate-900">${item.nome}</h4>
+                                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">${item.hora_inicio.substring(0,5)} • STATUS: ${item.status || 'PENDENTE'}</span>
+                                </div>
+                            </div>
+                            <i class='bx bx-chevron-down text-2xl text-slate-300 group-hover:text-crimson transition-transform'></i>
+                        </div>
+
+                        <div class="details hidden mt-6 pt-6 border-t border-slate-100 dark:border-slate-800 space-y-6 no-click animate-in fade-in duration-300">
+                            <div class="grid grid-cols-2 gap-8 text-sm">
+                                <div><p class="text-[10px] font-black text-slate-400 uppercase mb-1 tracking-widest">Contato</p><p class="dark:text-slate-200 text-slate-800 font-bold">${item.telefone || '---'}</p></div>
+                                <div><p class="text-[10px] font-black text-slate-400 uppercase mb-1 tracking-widest">Idade</p><p class="dark:text-slate-200 text-slate-800 font-bold">${item.idade || '--'} anos</p></div>
+                            </div>
+                            <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+                                <p class="text-[10px] font-black text-slate-400 uppercase mb-2 tracking-widest">Observações</p>
+                                <p class="text-xs dark:text-slate-300 text-slate-600 leading-relaxed">${item.obs || 'Nenhuma nota registrada.'}</p>
+                            </div>
+                            <div class="flex gap-3">
+                                <button onclick="window.location.href='${editUrl}'" class="flex-1 text-[11px] py-3.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-2xl font-black hover:bg-slate-200 dark:hover:bg-slate-700 transition-all uppercase">Editar</button>
+                                <button onclick="openReagendar('${itemData}')" class="flex-1 text-[11px] py-3.5 bg-crimson text-white rounded-2xl font-black hover:brightness-110 shadow-lg shadow-red-600/20 transition-all uppercase">Remarcar</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function filterAndRender(date) {
+            const dateStr = date.toLocaleDateString('en-CA');
+            document.getElementById('currentViewTitle').innerText = `DIA: ${date.toLocaleDateString('pt-BR')}`;
+            const filtered = allAgendamentos.filter(a => a.data === dateStr);
+            renderList(filtered);
+        }
+
+        function renderCalendar() {
+            const daysContainer = document.getElementById('calendarDays');
+            const monthTitle = document.getElementById('calendarMonth');
+            daysContainer.innerHTML = '';
+            const year = viewDate.getFullYear();
+            const month = viewDate.getMonth();
+            monthTitle.innerText = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' }).format(viewDate);
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            for (let i = 0; i < firstDay; i++) daysContainer.innerHTML += `<div></div>`;
+            for (let day = 1; day <= daysInMonth; day++) {
+                const isSelected = selectedDate.getDate() === day && selectedDate.getMonth() === month && selectedDate.getFullYear() === year;
+                const isToday = new Date().toDateString() === new Date(year, month, day).toDateString();
+                const dayEl = document.createElement('div');
+                dayEl.className = `p-2.5 text-xs cursor-pointer rounded-xl font-bold transition-all ${isSelected ? 'day-active' : 'dark:text-slate-400 text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800'} ${isToday && !isSelected ? 'text-crimson border border-crimson/30' : ''}`;
+                dayEl.innerText = day;
+                dayEl.onclick = () => { 
+                    selectedDate = new Date(year, month, day); 
+                    renderCalendar(); 
+                    filterAndRender(selectedDate); 
+                };
+                daysContainer.appendChild(dayEl);
+            }
+        }
+
+        // --- MELHORIA NA BARRA DE PESQUISA ---
+        function handleSearch(e) {
+            const term = e.target.value.toLowerCase().trim();
+            
+            // Se o usuário apagar o campo, volta a mostrar o dia selecionado no calendário
+            if (!term) {
+                filterAndRender(selectedDate);
+                return;
+            }
+            
+            // Busca em toda a base pelo nome ou disciplina, ignorando o filtro de data para facilitar a localização
+            const filtered = allAgendamentos.filter(a => 
+                (a.nome && a.nome.toLowerCase().includes(term)) || 
+                (a.disciplina && a.disciplina.toLowerCase().includes(term))
+            );
+            
+            document.getElementById('currentViewTitle').innerText = `Busca: "${term}"`;
+            renderList(filtered);
+        }
+
+        document.addEventListener("DOMContentLoaded", init);
+    </script>
+</body>
+</html>

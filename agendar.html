@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal Empresa - Agendamento</title>
+
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+
+    <script>
+        (function() {
+            if (localStorage.getItem('theme') === 'dark') document.documentElement.classList.add('dark');
+        })();
+    </script>
+
+    <style>
+        .form-card {
+            background: var(--bg-card);
+            padding: 35px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            max-width: 850px;
+            margin: 20px auto;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            transition: var(--tran-05);
+        }
+
+        .form-header {
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        .col-span-2 { grid-column: span 2; }
+        .full-width  { grid-column: 1 / -1; }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-color);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--body-color);
+            color: var(--text-color);
+            outline: none;
+            font-size: 14px;
+            font-family: 'Poppins';
+            transition: var(--tran-05);
+        }
+
+        .form-control:focus { border-color: var(--primary-color); }
+
+        textarea.form-control {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 14px;
+            margin-top: 25px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: var(--tran-05);
+        }
+
+        .btn-submit:hover { opacity: 0.9; transform: translateY(-1px); }
+
+        .btn-submit:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        @media (max-width: 768px) {
+            .form-grid { grid-template-columns: 1fr; }
+            .col-span-2, .full-width { grid-column: span 1; }
+        }
+    </style>
+</head>
+<body class="body-site">
+
+<div id="sidebar-placeholder"></div>
+
+<section class="home-section">
+    <div class="content-area">
+        <div class="form-card">
+            <div class="form-header">
+                <h2 id="page-title" style="color: var(--primary-color);">Novo Agendamento</h2>
+                <p style="opacity: 0.7; font-size: 13px;">Preencha os campos obrigatórios (*) para salvar.</p>
+            </div>
+
+            <div class="form-grid">
+                <div class="form-group col-span-2">
+                    <label>Nome Completo *</label>
+                    <input type="text" id="nome" class="form-control" placeholder="Nome do paciente">
+                </div>
+
+                <div class="form-group">
+                    <label>Idade</label>
+                    <input type="number" id="idade" class="form-control" placeholder="0" min="0" max="150">
+                </div>
+
+                <div class="form-group">
+                    <label>Telefone</label>
+                    <input type="text" id="telefone" class="form-control" placeholder="(00) 00000-0000">
+                </div>
+
+                <div class="form-group col-span-2">
+                    <label>Disciplina *</label>
+                    <select id="disciplina" class="form-control">
+                        <option value="">Selecione a disciplina...</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Data *</label>
+                    <input type="date" id="data" class="form-control">
+                </div>
+
+                <div class="form-group">
+                    <label>Hora Início *</label>
+                    <input type="time" id="hora_inicio" class="form-control">
+                </div>
+
+                <div class="form-group">
+                    <label>Hora Fim</label>
+                    <input type="time" id="hora_fim" class="form-control">
+                </div>
+
+                <div class="form-group full-width">
+                    <label>Observações</label>
+                    <textarea id="obs" class="form-control" placeholder="Detalhes adicionais do atendimento..."></textarea>
+                </div>
+            </div>
+
+            <!-- CORRIGIDO: onclick inline removido — listener adicionado via JS -->
+            <button class="btn-submit" id="btn-save">Salvar Agendamento</button>
+        </div>
+    </div>
+</section>
+
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="auth.js"></script>
+
+<script>
+    let agendamentoId = null;
+
+    // ── SANITIZAÇÃO DE PARAMS DE URL ──────────────────────────────────────────
+    // CORRIGIDO: todos os valores da URL passam por sanitização antes de usar
+    function sanitizar(str) {
+        if (!str) return '';
+        const div = document.createElement('div');
+        div.appendChild(document.createTextNode(decodeURIComponent(str)));
+        return div.innerHTML;
+    }
+
+    // ── INICIALIZAÇÃO ─────────────────────────────────────────────────────────
+    async function carregarPagina() {
+        const user = verificarSessao();
+
+        // CORRIGIDO: verificação de permissão ainda no frontend como UX,
+        // mas a proteção real deve existir via RLS no Supabase
+        if (!user || !user.perm_agendar) {
+            window.location.href = 'inicio.html';
+            return;
+        }
+
+        // Carrega disciplinas da grade
+        const { data: disciplinas } = await _supabase.from('grade_config').select('especialidade');
+        const sel = document.getElementById('disciplina');
+
+        if (disciplinas) {
+            const unicas = [...new Set(disciplinas.map(d => d.especialidade))];
+            unicas.forEach(esp => sel.add(new Option(esp.toUpperCase(), esp)));
+        }
+
+        const params = new URLSearchParams(window.location.search);
+
+        if (params.has('id')) {
+            // MODO EDIÇÃO
+            agendamentoId = params.get('id');
+            document.getElementById('page-title').innerText = "Editar Agendamento";
+            document.getElementById('btn-save').innerText   = "Atualizar Agendamento";
+
+            // CORRIGIDO: todos os params sanitizados antes de preencher os campos
+            document.getElementById('nome').value       = sanitizar(params.get('nome'));
+            document.getElementById('idade').value      = sanitizar(params.get('idade'));
+            document.getElementById('telefone').value   = sanitizar(params.get('tel'));
+            document.getElementById('data').value       = sanitizar(params.get('data'));
+            document.getElementById('hora_inicio').value = sanitizar(params.get('hora'));
+            document.getElementById('hora_fim').value   = sanitizar(params.get('hora_fim'));
+            document.getElementById('obs').value        = sanitizar(params.get('obs'));
+
+            // Aguarda o select ser populado antes de selecionar
+            setTimeout(() => {
+                document.getElementById('disciplina').value = sanitizar(params.get('disc'));
+            }, 250);
+
+        } else {
+            // MODO NOVO — pode vir com data/hora pré-preenchida
+            if (params.has('data')) document.getElementById('data').value       = sanitizar(params.get('data'));
+            if (params.has('hora')) document.getElementById('hora_inicio').value = sanitizar(params.get('hora'));
+        }
+    }
+
+    // ── SALVAR ────────────────────────────────────────────────────────────────
+    async function salvarAgendamento() {
+        const user = verificarSessao();
+        const btn  = document.getElementById('btn-save');
+
+        const payload = {
+            nome:        document.getElementById('nome').value.trim(),
+            idade:       document.getElementById('idade').value || null,
+            telefone:    document.getElementById('telefone').value.trim() || null,
+            disciplina:  document.getElementById('disciplina').value,
+            data:        document.getElementById('data').value,
+            hora_inicio: document.getElementById('hora_inicio').value,
+            hora_fim:    document.getElementById('hora_fim').value || null,
+            obs:         document.getElementById('obs').value.trim() || null,
+            criado_por:  user ? user.login : 'sistema'
+        };
+
+        if (!payload.nome || !payload.disciplina || !payload.data || !payload.hora_inicio) {
+            return alert("Por favor, preencha os campos com asterisco (*).");
+        }
+
+        btn.disabled = true;
+        btn.innerText = "Processando...";
+
+        const resultado = agendamentoId
+            ? await _supabase.from('agendamentos').update(payload).eq('id', agendamentoId)
+            : await _supabase.from('agendamentos').insert([payload]);
+
+        if (resultado.error) {
+            alert("Erro ao salvar: " + resultado.error.message);
+            btn.disabled = false;
+            btn.innerText = agendamentoId ? "Atualizar Agendamento" : "Salvar Agendamento";
+        } else {
+            alert(agendamentoId ? "Alterações salvas!" : "Agendamento realizado!");
+            window.location.href = 'agenda-mensal.html';
+        }
+    }
+
+    // ── EVENTOS ───────────────────────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', () => {
+        carregarPagina();
+        document.getElementById('btn-save').addEventListener('click', salvarAgendamento);
+    });
+</script>
+
+</body>
+</html>

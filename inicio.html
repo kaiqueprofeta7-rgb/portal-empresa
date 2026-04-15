@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <!-- Tema aplicado imediatamente para evitar flash branco -->
+    <script>
+        (function() {
+            if (localStorage.getItem('theme') === 'dark') {
+                document.documentElement.classList.add('dark');
+            }
+        })();
+    </script>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal Empresa - Início</title>
+
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="body-site">
+
+<div id="sidebar-placeholder"></div>
+
+<section class="home-section">
+    <div class="content-area">
+        <div class="welcome-container">
+            <h1>Olá, <span id="user-welcome">Usuário</span>!</h1>
+            <p>Seja bem-vindo ao portal administrativo.</p>
+        </div>
+    </div>
+</section>
+
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="auth.js"></script>
+<script>
+    // Preenche o nome do usuário logado na saudação
+    document.addEventListener('DOMContentLoaded', () => {
+        const user = verificarSessao();
+        if (user) {
+            const el = document.getElementById('user-welcome');
+            if (el) el.innerText = user.login.toUpperCase();
+        }
+    });
+</script>
+
+</body>
+</html>
