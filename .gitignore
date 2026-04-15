@@ -1,0 +1,9 @@
+# Credenciais — nunca subir ao GitHub
+config.js
+
+# Sistema
+.DS_Store
+Thumbs.db
+
+# Dependências
+node_modules/
